@@ -495,8 +495,16 @@ public class MainActivity extends Activity implements Hub.Listener {
     }
     @Override public void onWindowFocusChanged(boolean has) { super.onWindowFocusChanged(has); if (has) applyImmersive(); }
 
+    /* v3.2 : en mode fenêtres, le lanceur reste visible derrière Waze / Spotify. S'il passe en arrière-plan
+       juste après un placement, c'est que l'appli s'est ouverte en plein écran : les fenêtres ne marchent pas. */
+    private boolean tileFailed = false;
+    @Override protected void onStop() {
+        super.onStop();
+        if (Dash.recent()) { tileFailed = true; Dash.lastTile = 0; }
+    }
     @Override protected void onResume() {
         super.onResume();
+        if (tileFailed) { tileFailed = false; js("tilefail", "{}"); }
         Hub.launcherVisible = true; DoorOverlay.hide();
         applyImmersive();
         web.onResume();

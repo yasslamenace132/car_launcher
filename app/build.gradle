@@ -6,8 +6,8 @@ android {
         applicationId 'fr.ibiza.launcher'
         minSdk 23
         targetSdk 34
-        versionCode 29
-        versionName '3.1'
+        versionCode 30
+        versionName '3.2'
     }
     // Signature : crée ta propre clé (Android Studio > Build > Generate Signed Bundle / APK) et renseigne-la dans
     // keystore.properties (non versionné) : storeFile=..., storePassword=..., keyAlias=..., keyPassword=...

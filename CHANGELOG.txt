@@ -231,3 +231,8 @@ Version 3.1 (fiabilisation du tableau de bord)
 - Nouveau trajet après une veille du poste (écran éteint) : son Bluetooth puis tableau de bord, comme au démarrage.
 - Bouton « Son du téléphone » pour réveiller BT Music à la demande ; agrandissement par la barre de la fenêtre (système).
 - Pas de double placement des fenêtres.
+
+Version 3.2 (correctif boucle)
+- Le retour sur l'accueil ne rouvre plus Waze / Spotify (boucle quand les fenêtres ne marchent pas sur le poste).
+- Si une appli placée « en fenêtre » s'ouvre en plein écran, le lanceur le détecte et repasse tout seul en mode plein écran.
+- Un forçage « J'ai activé les fenêtres » antérieur est annulé une fois.

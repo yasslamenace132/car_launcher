@@ -307,7 +307,6 @@
     current = name;
     if (dashOn() && dashFree()) {
       if (name !== 'home' && leaving === 'home') { stayPage = true; Bridge.front(); }
-      if (name === 'home') setTimeout(function () { tileDash(); }, 450);
     }
     $('#btn-pages').innerHTML = svg(name === 'home' ? 'grid' : 'dash');
     if (name === 'vehicle' || name === 'home') hideLive(true);
@@ -1140,6 +1139,7 @@
      Les vraies applis (Waze ou Maps, Spotify) sont posées en fenêtres sur les cadres de l'accueil.
      Le lanceur reste visible autour : barre, vitesse, trajet. Ailleurs (Réglages, Véhicule…) il repasse devant. */
   var stayPage = false, booting = false, lastPause = 0;
+  if (!store.get('fix32', false)) { if (store.get('freeform', 'auto') === 'on') store.set('freeform', 'auto'); store.set('fix32', true); }   // v3.2 : annule un forçage qui causait la boucle
   /* début de trajet (démarrage du poste ou sortie de veille) : son Bluetooth, puis carte et musique */
   function startTrip() {
     booting = true;
@@ -1757,7 +1757,12 @@
     renderDash();
     if (booting) return;                                   // séquence de démarrage en cours : elle place les fenêtres elle-même
     if (lastPause && Date.now() - lastPause > 60 * 1000) { lastPause = 0; startTrip(); return; }   // v3.1 : nouveau trajet après une veille d'au moins 1 min
-    setTimeout(function () { tileDash(); }, 700);          // v3.0 : les fenêtres reprennent leur place
+    /* v3.2 : on ne rouvre plus rien en revenant sur l'accueil (sinon boucle quand les fenêtres ne marchent pas) */
+  });
+  /* v3.2 : Android signale que la dernière ouverture « en fenêtre » a recouvert tout l'écran : les fenêtres ne marchent pas ici */
+  Bridge.on('tilefail', function () {
+    store.set('freeform', 'off'); renderDash();
+    toast('Les fenêtres ne sont pas disponibles sur ce poste : les applis s\'ouvrent en plein écran.');
   });
   Bridge.on('sleep', function () { lastPause = Date.now(); });   // écran éteint (contact coupé) : le prochain retour lance un nouveau trajet   // retour de la lecture CarCan masquée : on reste où l'on était
   Bridge.on('home', function () { if (current !== 'home') showPage('home'); else introSpin(); });
