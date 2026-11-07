@@ -982,6 +982,7 @@
       row('door', 'Autorisation d\'affichage par-dessus', p.overlay ? 'Autorisée' : 'À autoriser', 'sys:overlay'),
       row('settings', 'Place des applis', BAR_MODES[store.get('barMode', 'auto')] || 'Automatique', 'bar:mode'),
       toggleRow('home', 'Tableau de bord : carte et musique en fenêtres', store.get('dash', true), 'dash'),
+      row('settings', 'Fenêtres d\'applis', { auto: 'Détection auto', on: 'Activées', off: 'Désactivées' }[store.get('freeform', 'auto')] || 'Détection auto', 'win:mode'),
       toggleRow('music', 'Son Bluetooth du téléphone au démarrage', store.get('btAuto', true), 'btAuto'),
       roleRow('bt', 'Appli son Bluetooth du poste'),
       toggleRow('music', 'Rectangle musique sur Waze', store.get('mini', true), 'mini'),
@@ -1138,9 +1139,20 @@
   /* ======================= v3.0 : tableau de bord =======================
      Les vraies applis (Waze ou Maps, Spotify) sont posées en fenêtres sur les cadres de l'accueil.
      Le lanceur reste visible autour : barre, vitesse, trajet. Ailleurs (Réglages, Véhicule…) il repasse devant. */
-  var stayPage = false;
+  var stayPage = false, booting = false, lastPause = 0;
+  /* début de trajet (démarrage du poste ou sortie de veille) : son Bluetooth, puis carte et musique */
+  function startTrip() {
+    booting = true;
+    wakeBt(function () {
+      booting = false;
+      if (current !== 'home') showPage('home');
+      if (dashOn() && dashFree()) { tileDash(); return; }
+      var n = findTheme('nav');
+      if (!dashOn() && store.get('autoNav', true) && n && (roleApp('nav') || PREFER.nav.some(function (x) { return String(n.pkg).indexOf(x) === 0; }))) openApp(n);
+    });
+  }
   function dashOn() { return store.get('dash', true); }
-  function dashFree() { var i = Bridge.barInfo() || {}; return !!i.freeform; }
+  function dashFree() { var f = store.get('freeform', 'auto'); if (f === 'on') return true; if (f === 'off') return false; var i = Bridge.barInfo() || {}; return !!i.freeform; }
   function pxRect(el) {
     var r = el.getBoundingClientRect(), d = window.devicePixelRatio || 1;
     return { x: Math.round(r.left * d), y: Math.round(r.top * d), w: Math.round(r.width * d), h: Math.round(r.height * d) };
@@ -1150,6 +1162,8 @@
     var on = dashOn(); root.classList.toggle('dashon', on);
     if (!on) return;
     var n = findTheme('nav'), m = findTheme('music'), free = dashFree();
+    root.classList.toggle('nofree', !free);
+    $('#dash-hint').style.visibility = free ? 'visible' : 'hidden';
     $('#dash-nav-name').textContent = n ? n.label : 'Navigation';
     $('#dash-music-name').textContent = m ? m.label : 'Musique';
     var how = 'Pour l\'afficher ici : Paramètres Android > Options pour les développeurs > active « fenêtres de forme libre » et « forcer le redimensionnement », puis redémarre la tablette. En attendant, touche ce cadre pour l\'ouvrir.';
@@ -1158,8 +1172,11 @@
     $('#dash-speed').textContent = Math.round(car.speed || 0);
     $('#dash-trip').textContent = (fmtN(car.trip || 0, 1) || '0') + ' km';
   }
+  var lastTileAt = 0;
   function tileDash(which) {
     if (!dashOn() || current !== 'home') return;
+    if (!which && Date.now() - lastTileAt < 1500) return;   // évite de replacer deux fois de suite
+    lastTileAt = Date.now();
     var n = findTheme('nav'), m = findTheme('music'), list = [];
     if (which === 'nav' && n) list.push(frameItem(n, $('#stage')));
     else if (which === 'music' && m) list.push(frameItem(m, $('#stage')));
@@ -1172,9 +1189,10 @@
   /* sans fenêtres : un appui sur un cadre ouvre l'appli normalement */
   tappable($('#dash-nav'), function () { var n = findTheme('nav'); if (!n) return; if (dashFree()) tileDash(); else openApp(n); });
   tappable($('#dash-music'), function () { var m = findTheme('music'); if (!m) return; if (dashFree()) tileDash(); else openApp(m); });
-  tappable($('#dash-big-nav'), function () { if (dashFree()) tileDash('nav'); else { var n = findTheme('nav'); if (n) openApp(n); } });
-  tappable($('#dash-big-music'), function () { if (dashFree()) tileDash('music'); else { var m = findTheme('music'); if (m) openApp(m); } });
   tappable($('#dash-retile'), function () { tileDash(); });
+  tappable($('#dash-bt'), function () { var bt = findBt(); if (bt) { store.set('btAuto', true); booting = true; wakeBt(function () { booting = false; tileDash(); }); } else { toast('Choisis l\'appli son Bluetooth dans Réglages > Applis par défaut'); showPage('settings'); } });
+  /* détection des fenêtres ratée : l'utilisateur confirme qu'il les a activées */
+  tappable($('#dash-force'), function () { store.set('freeform', 'on'); renderDash(); setTimeout(function () { tileDash(); }, 300); });
 
   /* son Bluetooth : l'appli « BT Music » du poste doit être active pour que le son du téléphone sorte */
   function findBt() {
@@ -1193,6 +1211,10 @@
   function act(a, el) {
     var p = a.split(':');
     if (a === 'upd:check') { if (UPD.remote > UPD.local && UPD.local) updSheet(); else checkUpdate(true); return; }
+    if (a === 'win:mode') {
+      var order = ['auto', 'on', 'off'], cur = store.get('freeform', 'auto');
+      store.set('freeform', order[(order.indexOf(cur) + 1) % 3]); renderSettings(); renderDash(); return;
+    }
     if (a === 'bar:mode') { barSheet(); return; }
     if (a === 'gps:odo') { odoSheet(); return; }
     if (a === 'gps:reset') { gpsReset(); renderSettings(); toast('Trajet remis à zéro'); return; }
@@ -1253,15 +1275,7 @@
     autoUpdateCheck();
     /* v2.4 : au démarrage du poste, Waze s'ouvre à côté de la barre (une fois) */
     renderDash();
-    if (Bridge.firstStart()) {
-      setTimeout(function () {
-        wakeBt(function () {
-          if (dashOn()) { tileDash(); return; }
-          var n = findTheme('nav');
-          if (store.get('autoNav', true) && n && (roleApp('nav') || PREFER.nav.some(function (x) { return String(n.pkg).indexOf(x) === 0; }))) openApp(n);
-        });
-      }, 2500);
-    }
+    if (Bridge.firstStart()) setTimeout(startTrip, 2500);
     tick(); setInterval(function () { tick(); applyTheme(); applyWall(); }, 1000 * 5);
     $('#wall-file').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) loadCustomWall(f); e.target.value = ''; });
     alignGlass();
@@ -1740,8 +1754,12 @@
     if (stayPage) { stayPage = false; return; }          // v3.0 : le lanceur repasse devant pour afficher une autre page
     if (current !== 'home') showPage('home');
     introSpin();
-    renderDash(); setTimeout(function () { tileDash(); }, 700);   // v3.0 : les fenêtres reprennent leur place
-  });   // retour de la lecture CarCan masquée : on reste où l'on était
+    renderDash();
+    if (booting) return;                                   // séquence de démarrage en cours : elle place les fenêtres elle-même
+    if (lastPause && Date.now() - lastPause > 60 * 1000) { lastPause = 0; startTrip(); return; }   // v3.1 : nouveau trajet après une veille d'au moins 1 min
+    setTimeout(function () { tileDash(); }, 700);          // v3.0 : les fenêtres reprennent leur place
+  });
+  Bridge.on('sleep', function () { lastPause = Date.now(); });   // écran éteint (contact coupé) : le prochain retour lance un nouveau trajet   // retour de la lecture CarCan masquée : on reste où l'on était
   Bridge.on('home', function () { if (current !== 'home') showPage('home'); else introSpin(); });
   window.addEventListener('resize', function () { fit(); renderApps(); alignGlass(); });
   if (Bridge.mock) window.showPageForTest = function (n) { showPage(n); };   // aperçu dans un navigateur uniquement

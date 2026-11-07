@@ -225,3 +225,9 @@ Version 3.0 (tableau de bord)
   Boutons Agrandir la carte / la musique / Replacer. Nécessite les fenêtres de forme libre (Options développeurs).
 - Au démarrage : l'appli « BT Music » du poste est réveillée pour que le son du téléphone sorte, puis le tableau de bord se met en place.
 - Réglages : Tableau de bord, Son Bluetooth au démarrage, Appli son Bluetooth du poste.
+
+Version 3.1 (fiabilisation du tableau de bord)
+- Bouton « J'ai activé les fenêtres » et réglage « Fenêtres d'applis » (auto / activées / désactivées) si la détection se trompe.
+- Nouveau trajet après une veille du poste (écran éteint) : son Bluetooth puis tableau de bord, comme au démarrage.
+- Bouton « Son du téléphone » pour réveiller BT Music à la demande ; agrandissement par la barre de la fenêtre (système).
+- Pas de double placement des fenêtres.

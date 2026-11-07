@@ -25,7 +25,8 @@
   <section id="page-home" class="page is-active">
     <!-- v3.0 : tableau de bord. Waze et Spotify (les vraies applis) sont posés en fenêtres sur ces cadres -->
     <div id="dash" class="dash">
-      <div id="dash-nav" class="glass dframe"><div class="dframe-in"><b id="dash-nav-name">Navigation</b><span id="dash-nav-msg"></span></div></div>
+      <div id="dash-nav" class="glass dframe"><div class="dframe-in"><b id="dash-nav-name">Navigation</b><span id="dash-nav-msg"></span>
+        <button class="chip-btn press" id="dash-force">J'ai activé les fenêtres</button></div></div>
       <div class="dash-side">
         <div id="dash-music" class="glass dframe"><div class="dframe-in"><b id="dash-music-name">Musique</b><span id="dash-music-msg"></span></div></div>
         <div id="dash-info" class="glass card dinfo">
@@ -33,10 +34,10 @@
             <div class="dinfo-speed"><b id="dash-speed">0</b><span>km/h</span></div>
             <div class="dinfo-trip"><span>Trajet</span><b id="dash-trip">0 km</b></div>
           </div>
+          <p class="dinfo-hint" id="dash-hint">Pour agrandir une fenêtre, touche le carré dans sa barre du haut.</p>
           <div class="dinfo-btns">
-            <button class="chip-btn press" id="dash-big-nav">Agrandir la carte</button>
-            <button class="chip-btn press" id="dash-big-music">Agrandir la musique</button>
-            <button class="chip-btn press" id="dash-retile">Replacer</button>
+            <button class="chip-btn press" id="dash-bt">Son du téléphone</button>
+            <button class="chip-btn press" id="dash-retile">Replacer les fenêtres</button>
           </div>
         </div>
       </div>

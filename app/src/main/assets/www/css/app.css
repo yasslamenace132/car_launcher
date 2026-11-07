@@ -700,3 +700,6 @@ html:not(.light).wall-bright #wall::after { opacity: .45; }
 .dinfo-trip b { font-size: 24px; font-weight: 500; font-feature-settings: 'tnum'; }
 .dinfo-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .dinfo-btns .chip-btn { flex: 1 1 45%; height: 46px; justify-content: center; font-size: 15px; white-space: nowrap; }
+.dinfo-hint { margin: 6px 0; font-size: 14px; line-height: 18px; color: var(--label2); }
+#dash-force { display: none; margin-top: 10px; height: 48px; padding: 0 18px; font-size: 16px; }
+.nofree #dash-force { display: inline-flex; }

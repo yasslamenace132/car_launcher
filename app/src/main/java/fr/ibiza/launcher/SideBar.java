@@ -86,6 +86,9 @@ public final class SideBar {
 
     static boolean freeformSupported(Context c) {
         if (Build.VERSION.SDK_INT < 24) return false;
+        String forced = pref(c, "freeform", "auto");               // v3.1 : réglage manuel si la détection se trompe
+        if ("on".equals(forced)) return true;
+        if ("off".equals(forced)) return false;
         try { if (c.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FREEFORM_WINDOW_MANAGEMENT)) return true; } catch (Exception ignored) {}
         try { return Settings.Global.getInt(c.getContentResolver(), "enable_freeform_support", 0) != 0; } catch (Exception e) { return false; }
     }

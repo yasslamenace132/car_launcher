@@ -133,6 +133,10 @@ public class MainActivity extends Activity implements Hub.Listener {
         return f.exists() ? f : null;
     }
 
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context c, Intent i) { sleptAt = System.currentTimeMillis(); js("sleep", "{}"); }
+    };
+    static long sleptAt = 0;
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         Hub.app = getApplicationContext();
@@ -186,6 +190,9 @@ public class MainActivity extends Activity implements Hub.Listener {
         f.addAction(Intent.ACTION_PACKAGE_ADDED); f.addAction(Intent.ACTION_PACKAGE_REMOVED); f.addAction(Intent.ACTION_PACKAGE_CHANGED);
         f.addDataScheme("package");
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(pkgReceiver, f, Context.RECEIVER_EXPORTED); else registerReceiver(pkgReceiver, f);
+        /* v3.1 : écran éteint (contact coupé, mise en veille) : le prochain retour est un nouveau trajet */
+        IntentFilter sf = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenReceiver, sf, Context.RECEIVER_NOT_EXPORTED); else registerReceiver(screenReceiver, sf);
         Hub.add(this);
         Hub.log("Lanceur démarré · Android SDK " + Build.VERSION.SDK_INT + " · " + Build.MANUFACTURER + " " + Build.MODEL + " · " + Build.HARDWARE);
     }
@@ -539,6 +546,7 @@ public class MainActivity extends Activity implements Hub.Listener {
     @Override protected void onDestroy() {
         Hub.remove(this);
         try { unregisterReceiver(pkgReceiver); } catch (Exception ignored) {}
+        try { unregisterReceiver(screenReceiver); } catch (Exception ignored) {}
         if (web != null) { web.destroy(); web = null; }
         super.onDestroy();
     }
