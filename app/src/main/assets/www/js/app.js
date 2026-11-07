@@ -182,8 +182,20 @@
     appByKey = {}; apps.forEach(function (a) { appByKey[key(a)] = a; });
   }
   var barAsked = false;
+  var WANT = { nav: { pkg: 'com.waze', name: 'Waze' }, music: { pkg: 'com.spotify.music', name: 'Spotify' } };
+  function missingSheet(w, a) {
+    openSheet('<div class="t-headline">' + w.name + ' n\'est pas installé</div>' +
+      '<div class="t-sub">Le lanceur ouvre « ' + esc(a.label || '') + ' » à la place. Installe ' + w.name + ' depuis le Play Store (la tablette doit être connectée à Internet), puis reviens ici.</div>' +
+      '<div class="sheet-actions"><button class="sbtn press" data-a="no">Ouvrir ' + esc(a.label || 'quand même') + '</button><button class="sbtn primary press" data-a="ok">Installer ' + w.name + '</button></div>', function (s) {
+      $('[data-a="no"]', s).onclick = function () { closeSheet(); store.set('skipWant_' + w.pkg, true); openApp(a); };
+      $('[data-a="ok"]', s).onclick = function () { closeSheet(); Bridge.openStore(w.pkg); };
+    });
+  }
   function openApp(a, originEl) {
     if (a.virtual) { showPage(a.virtual, originEl); return; }
+    /* v2.4 : Waze / Spotify absents : on propose de les installer au lieu d'ouvrir « GPS Test » ou le lecteur du poste */
+    var w = WANT[a.theme];
+    if (w && a.pkg !== w.pkg && !roleApp(a.theme) && !store.get('skipWant_' + w.pkg, false) && !Bridge.installed(w.pkg)) { missingSheet(w, a); return; }
     /* v2.3 : sans l'autorisation « affichage par-dessus », la barre ne peut pas rester sur Waze / Spotify */
     var info = store.get('bar', true) && !barAsked ? Bridge.barInfo() : null;
     if (info && !info.demo && info.overlay === false) {
@@ -963,6 +975,8 @@
       toggleRow('home', 'Garder la barre sur Waze, Spotify…', store.get('bar', true), 'bar'),
       row('door', 'Autorisation d\'affichage par-dessus', p.overlay ? 'Autorisée' : 'À autoriser', 'sys:overlay'),
       row('settings', 'Place des applis', BAR_MODES[store.get('barMode', 'auto')] || 'Automatique', 'bar:mode'),
+      toggleRow('music', 'Rectangle musique sur Waze', store.get('mini', true), 'mini'),
+      toggleRow('home', 'Ouvrir Waze au démarrage', store.get('autoNav', true), 'autoNav'),
       /* v2.2 : mise à jour depuis GitHub */
       '<div class="hdr">Mises à jour</div>',
       row('check', 'Rechercher une mise à jour', UPD.remote > UPD.local && UPD.local ? 'Version ' + esc(UPD.name || '') + ' disponible' : 'Version actuelle ' + esc(APP_VERSION_NAME), 'upd:check'),
@@ -1173,6 +1187,10 @@
     applyBarMode();
     UPD.local = Bridge.appVersion() || 0;
     autoUpdateCheck();
+    /* v2.4 : au démarrage du poste, Waze s'ouvre à côté de la barre (une fois) */
+    if (Bridge.firstStart() && store.get('autoNav', true)) {
+      setTimeout(function () { var n = findTheme('nav'); if (n && (n.pkg === 'com.waze' || roleApp('nav'))) openApp(n); }, 2500);
+    }
     tick(); setInterval(function () { tick(); applyTheme(); applyWall(); }, 1000 * 5);
     $('#wall-file').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) loadCustomWall(f); e.target.value = ''; });
     alignGlass();

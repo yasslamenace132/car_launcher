@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.util.List;
 
 public class MainActivity extends Activity implements Hub.Listener {
+    static boolean startedOnce = false;   // v2.4 : ouverture auto de Waze une fois par démarrage
     static final String HOST = "appassets.androidplatform.net";
     static final String START = "https://" + HOST + "/www/index.html";
 
@@ -275,6 +276,20 @@ public class MainActivity extends Activity implements Hub.Listener {
         @JavascriptInterface public void checkUpdate(String repo) { Updater.check(MainActivity.this, repo); }
         @JavascriptInterface public void installUpdate(String repo) { Updater.install(MainActivity.this, repo); }
         @JavascriptInterface public int appVersion() { return Updater.localCode(MainActivity.this); }
+        /* v2.4 : Waze ouvert d'office une seule fois après le démarrage du poste ; fiche Play Store */
+        @JavascriptInterface public boolean firstStart() { boolean f = !startedOnce; startedOnce = true; return f; }
+        @JavascriptInterface public boolean installed(String pkg) {
+            try { getPackageManager().getPackageInfo(pkg, 0); return true; } catch (Exception e) { return false; }
+        }
+        @JavascriptInterface public void openStore(final String pkg) {
+            handler.post(new Runnable() { public void run() {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+                catch (Exception e) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + pkg)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+                    catch (Exception e2) { Hub.log("Play Store KO " + e2); }
+                }
+            } });
+        }
         @JavascriptInterface public void tripReset() { TripService.reset(MainActivity.this); }
         @JavascriptInterface public String getState() {
             try {

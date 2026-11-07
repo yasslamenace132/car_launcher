@@ -210,3 +210,8 @@ Version 2.3
 - Navigation et Musique : sans choix manuel, préférence pour Waze / Google Maps et Spotify / Deezer, au lieu de la
   première appli trouvée (« GPS Test », lecteur du poste). Le dock déjà enregistré est corrigé une fois.
 - Si l'autorisation « affichage par-dessus » manque, ouvrir une appli propose de l'activer pour garder la barre.
+
+Version 2.4
+- Rectangle musique en haut à droite, par-dessus Waze (MiniPlayer.java) : titre, lecture/pause, suivant.
+- Waze s'ouvre d'office à côté de la barre au démarrage du poste (Réglages > Ouvrir Waze au démarrage).
+- Waze ou Spotify absents : proposition de les installer depuis le Play Store au lieu d'ouvrir une autre appli.

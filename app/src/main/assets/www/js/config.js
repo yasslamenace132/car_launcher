@@ -5,7 +5,7 @@
    carPack: false -> pas encore de pack 3D : l'accueil affiche la carte « Trajet » à la place de la voiture. */
 window.IBZ_CONFIG = {
   "car": { "name": "Aygo", "model": "Toyota Aygo 1.0 VVT-i", "fuel": "essence" },
-  "version": "2.3",
+  "version": "2.4",
   "updateRepo": "yasslamenace132/car_launcher",
   "can": false,
   "doors": 3,

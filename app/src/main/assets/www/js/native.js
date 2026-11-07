@@ -82,6 +82,9 @@
     tripState: function () { return mock || !N.tripState ? null : parse(N.tripState(), null); },
     tripReset: function () { if (!mock && N.tripReset) N.tripReset(); },
     /* v2.2 : mise à jour depuis GitHub */
+    firstStart: function () { return mock ? false : (N.firstStart ? N.firstStart() : false); },
+    installed: function (pkg) { return mock ? true : (N.installed ? N.installed(pkg) : true); },
+    openStore: function (pkg) { if (mock) { API.toast('Play Store : ' + pkg + ' (démo)'); return; } if (N.openStore) N.openStore(pkg); },
     appVersion: function () { return mock || !N.appVersion ? 0 : N.appVersion(); },
     checkUpdate: function (repo) {
       if (mock) { setTimeout(function () { emit('update', { state: 'available', local: 24, remote: 25, name: '2.3 (démo)', progress: 0 }); }, 400); return; }

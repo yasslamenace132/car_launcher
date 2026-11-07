@@ -77,7 +77,7 @@ public final class SideBar {
     /* ---------------- réglages ---------------- */
     private static SharedPreferences prefs(Context c) { return c.getSharedPreferences("ibz", Context.MODE_PRIVATE); }
     /** l'interface enregistre ses réglages en JSON ("auto" avec guillemets) : on les retire */
-    private static String pref(Context c, String k, String dflt) {
+    static String pref(Context c, String k, String dflt) {
         String v = prefs(c).getString(k, dflt);
         return v == null ? dflt : v.replace("\"", "").trim();
     }
@@ -164,11 +164,13 @@ public final class SideBar {
     /* ---------------- affichage ---------------- */
     /** le lanceur passe au second plan : on affiche la barre */
     static void onLauncherHidden(Context c) {
+        MiniPlayer.onLauncherHidden(c);               // v2.4 : rectangle musique en haut à droite
         if (!enabled(c) || !overlayAllowed(c)) { hide(); return; }
         show(c);
     }
     /** le lanceur revient : il a sa propre barre, sauf en mode « bande réservée » où la barre système reste */
     static void onLauncherShown(Context c) {
+        MiniPlayer.onLauncherShown();
         active = null; markActive();
         if (enabled(c) && overlayAllowed(c) && "reserve".equals(effectiveMode(c))) show(c); else hide();
     }
