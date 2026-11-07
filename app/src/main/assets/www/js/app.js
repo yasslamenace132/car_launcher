@@ -928,7 +928,11 @@
       '<div class="hdr">Barre sur les applis</div>',
       toggleRow('home', 'Garder la barre sur Waze, Spotify…', store.get('bar', true), 'bar'),
       row('door', 'Autorisation d\'affichage par-dessus', p.overlay ? 'Autorisée' : 'À autoriser', 'sys:overlay'),
-      row('settings', 'Place des applis', BAR_MODES[store.get('barMode', 'auto')] || 'Automatique', 'bar:mode')
+      row('settings', 'Place des applis', BAR_MODES[store.get('barMode', 'auto')] || 'Automatique', 'bar:mode'),
+      /* v2.2 : mise à jour depuis GitHub */
+      '<div class="hdr">Mises à jour</div>',
+      row('check', 'Rechercher une mise à jour', UPD.remote > UPD.local && UPD.local ? 'Version ' + esc(UPD.name || '') + ' disponible' : 'Version actuelle ' + esc(APP_VERSION_NAME), 'upd:check'),
+      toggleRow('check', 'Vérifier au démarrage', store.get('autoUpdate', true), 'autoUpdate')
     ], NOCAN ? [
       '<div class="hdr">Ma voiture</div>',
       row('gauge', 'Kilométrage du compteur', car.odo != null ? fmtN(car.odo) + ' km' : 'À saisir', 'gps:odo'),
@@ -1034,8 +1038,49 @@
     });
   }
 
+  /* ======================= v2.2 : mise à jour depuis GitHub ======================= */
+  var APP_VERSION_NAME = CFG.version || '';
+  var UPD = { local: 0, remote: 0, name: '', manual: false };
+  function updRepo() { return CFG.updateRepo || ''; }
+  function updSheet() {
+    openSheet('<div class="t-headline">Mise à jour disponible</div><div class="t-sub">Version ' + esc(UPD.name || '') +
+      '. Elle s\'installe par-dessus l\'actuelle, tes réglages sont conservés. Android te demandera de confirmer.</div>' +
+      '<div class="t-sub" id="upd-state"></div>' +
+      '<div class="sheet-actions"><button class="sbtn press" data-a="cancel">Plus tard</button><button class="sbtn primary press" data-a="ok">Installer</button></div>', function (s) {
+      $('[data-a="cancel"]', s).onclick = closeSheet;
+      $('[data-a="ok"]', s).onclick = function () { $('#upd-state', s).textContent = 'Téléchargement…'; Bridge.installUpdate(updRepo()); };
+    });
+  }
+  function checkUpdate(manual) { UPD.manual = !!manual; if (manual) toast('Recherche d\'une mise à jour…'); Bridge.checkUpdate(updRepo()); }
+  Bridge.on('update', function (d) {
+    d = d || {};
+    if (d.local) UPD.local = d.local;
+    var st = $('#upd-state');
+    switch (d.state) {
+      case 'available':
+        UPD.remote = d.remote; UPD.name = d.name;
+        if (UPD.manual) updSheet(); else toast('Mise à jour ' + (d.name || '') + ' disponible : Réglages > Mises à jour');
+        break;
+      case 'none': if (UPD.manual) toast('Le lanceur est à jour'); break;
+      case 'downloading': if (st) st.textContent = 'Téléchargement… ' + (d.progress || 0) + ' %'; break;
+      case 'installing': if (st) st.textContent = 'Installation…'; break;
+      case 'permission': closeSheet(); toast(d.msg || 'Autorise l\'installation, puis réessaie'); break;
+      case 'error': if (UPD.manual || st) { if (st) st.textContent = d.msg || 'Erreur'; else toast(d.msg || 'Erreur'); } break;
+      case 'done': closeSheet(); toast('Mise à jour installée'); break;
+    }
+    if (current === 'settings') renderSettings();
+  });
+  function autoUpdateCheck() {
+    if (!store.get('autoUpdate', true)) return;
+    var last = store.get('updCheckedAt', 0);
+    if (Date.now() - last < 6 * 3600 * 1000) return;     // au plus toutes les 6 h
+    store.set('updCheckedAt', Date.now());
+    setTimeout(function () { checkUpdate(false); }, 8000);  // laisse le lanceur démarrer d'abord
+  }
+
   function act(a, el) {
     var p = a.split(':');
+    if (a === 'upd:check') { if (UPD.remote > UPD.local && UPD.local) updSheet(); else checkUpdate(true); return; }
     if (a === 'bar:mode') { barSheet(); return; }
     if (a === 'gps:odo') { odoSheet(); return; }
     if (a === 'gps:reset') { gpsReset(); renderSettings(); toast('Trajet remis à zéro'); return; }
@@ -1092,6 +1137,8 @@
     renderMedia(st.media); onVehicle(st.vehicle); renderCd();
     if (NOCAN) { renderNocarHome(); renderVehicleSummary(); setVehView('trip'); }
     applyBarMode();
+    UPD.local = Bridge.appVersion() || 0;
+    autoUpdateCheck();
     tick(); setInterval(function () { tick(); applyTheme(); applyWall(); }, 1000 * 5);
     $('#wall-file').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) loadCustomWall(f); e.target.value = ''; });
     alignGlass();

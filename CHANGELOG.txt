@@ -199,3 +199,9 @@ Version 2.1 (barre sur les applis)
 - Compteur de trajet en arrière-plan (TripService.java) : le GPS continue de compter quand Waze est devant.
   Petite notification permanente « Trajet en cours » (obligatoire pour Android).
 - Les applis du dock sont envoyées à la barre à chaque changement.
+
+Version 2.2 (mises à jour depuis le lanceur)
+- Réglages > Mises à jour : recherche la dernière version publiée sur GitHub, la télécharge et l'installe
+  (Android demande une confirmation). Vérification automatique au démarrage, au plus toutes les 6 h.
+- Signature fixe (signing/debug.keystore) : chaque nouvelle version s'installe par-dessus l'ancienne.
+- La compilation GitHub publie car-launcher.apk et version.json dans la page « Dernière version ».

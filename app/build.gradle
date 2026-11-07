@@ -6,8 +6,8 @@ android {
         applicationId 'fr.ibiza.launcher'
         minSdk 23
         targetSdk 34
-        versionCode 23
-        versionName '2.1'
+        versionCode 24
+        versionName '2.2'
     }
     // Signature : crée ta propre clé (Android Studio > Build > Generate Signed Bundle / APK) et renseigne-la dans
     // keystore.properties (non versionné) : storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
@@ -15,7 +15,7 @@ android {
     def ks = new Properties(); if (ksFile.exists()) ks.load(new FileInputStream(ksFile))
     signingConfigs {
         rel { if (ksFile.exists()) { storeFile file(ks['storeFile']); storePassword ks['storePassword']; keyAlias ks['keyAlias']; keyPassword ks['keyPassword'] } }
-        // Clé de test fixe (dépôt privé) : chaque APK compilé sur GitHub a la même signature,
+        // Clé de test fixe : chaque APK compilé sur GitHub a la même signature,
         // donc une nouvelle version s'installe par-dessus l'ancienne sans perdre les réglages.
         debug {
             storeFile rootProject.file('signing/debug.keystore')

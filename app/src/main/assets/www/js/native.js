@@ -81,6 +81,16 @@
     hasTripService: function () { return !mock && !!N.tripState; },
     tripState: function () { return mock || !N.tripState ? null : parse(N.tripState(), null); },
     tripReset: function () { if (!mock && N.tripReset) N.tripReset(); },
+    /* v2.2 : mise à jour depuis GitHub */
+    appVersion: function () { return mock || !N.appVersion ? 0 : N.appVersion(); },
+    checkUpdate: function (repo) {
+      if (mock) { setTimeout(function () { emit('update', { state: 'available', local: 24, remote: 25, name: '2.3 (démo)', progress: 0 }); }, 400); return; }
+      if (N.checkUpdate) N.checkUpdate(repo || '');
+    },
+    installUpdate: function (repo) {
+      if (mock) { API.toast('Installation de la mise à jour (démo)'); return; }
+      if (N.installUpdate) N.installUpdate(repo || '');
+    },
     sharePdf: function () { if (mock) { API.toast('Partage du PDF (démo)'); return; } if (N.sharePdf) N.sharePdf(); }
   };
   if (mock) {

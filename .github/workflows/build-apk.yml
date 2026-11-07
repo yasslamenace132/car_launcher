@@ -35,6 +35,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER=$(grep -o "versionName '[^']*'" app/build.gradle | cut -d"'" -f2)
-          NOTES="Version $VER, compilée le $(date -u +'%d/%m/%Y à %H:%M') UTC. Télécharge car-launcher.apk et installe-le par-dessus l'ancien."
+          CODE=$(grep -o "versionCode [0-9]*" app/build.gradle | cut -d" " -f2)
+          # lu par le lanceur (Réglages > Mises à jour) pour savoir s'il existe une version plus récente
+          printf '{"versionCode": %s, "versionName": "%s"}\n' "$CODE" "$VER" > version.json
+          NOTES="Version $VER, compilée le $(date -u +'%d/%m/%Y à %H:%M') UTC. Télécharge car-launcher.apk et installe-le par-dessus l'ancien, ou utilise Réglages > Mises à jour dans le lanceur."
           gh release delete derniere-version --yes --cleanup-tag || true
-          gh release create derniere-version car-launcher.apk --title "Dernière version ($VER)" --notes "$NOTES" --target "$GITHUB_SHA" --latest
+          gh release create derniere-version car-launcher.apk version.json --title "Dernière version ($VER)" --notes "$NOTES" --target "$GITHUB_SHA" --latest

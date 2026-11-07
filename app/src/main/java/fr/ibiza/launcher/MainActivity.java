@@ -271,6 +271,10 @@ public class MainActivity extends Activity implements Hub.Listener {
         }
         @JavascriptInterface public String barInfo() { return SideBar.info(MainActivity.this); }
         @JavascriptInterface public String tripState() { return TripService.state(MainActivity.this); }
+        /* v2.2 : mise à jour depuis GitHub */
+        @JavascriptInterface public void checkUpdate(String repo) { Updater.check(MainActivity.this, repo); }
+        @JavascriptInterface public void installUpdate(String repo) { Updater.install(MainActivity.this, repo); }
+        @JavascriptInterface public int appVersion() { return Updater.localCode(MainActivity.this); }
         @JavascriptInterface public void tripReset() { TripService.reset(MainActivity.this); }
         @JavascriptInterface public String getState() {
             try {
