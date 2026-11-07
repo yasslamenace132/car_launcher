@@ -15,8 +15,15 @@ android {
     def ks = new Properties(); if (ksFile.exists()) ks.load(new FileInputStream(ksFile))
     signingConfigs {
         rel { if (ksFile.exists()) { storeFile file(ks['storeFile']); storePassword ks['storePassword']; keyAlias ks['keyAlias']; keyPassword ks['keyPassword'] } }
+        // Clé de test fixe (dépôt privé) : chaque APK compilé sur GitHub a la même signature,
+        // donc une nouvelle version s'installe par-dessus l'ancienne sans perdre les réglages.
+        debug {
+            storeFile rootProject.file('signing/debug.keystore')
+            storePassword 'android'; keyAlias 'androiddebugkey'; keyPassword 'android'
+        }
     }
     buildTypes {
+        debug { signingConfig signingConfigs.debug }
         release { minifyEnabled false; if (ksFile.exists()) signingConfig signingConfigs.rel }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }

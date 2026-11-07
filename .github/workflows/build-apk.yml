@@ -1,10 +1,15 @@
-# Compile l'APK gratuitement sur GitHub à chaque envoi (onglet « Actions » du dépôt).
-# L'APK de test (signé avec la clé de débogage) se télécharge dans l'onglet Actions > dernière exécution > « Artifacts ».
+# Compile l'APK gratuitement sur GitHub à chaque envoi.
+# Le fichier car-launcher.apk est publié dans la page « Releases » du dépôt (version « Dernière version »),
+# téléchargeable directement depuis un téléphone, sans zip à décompresser.
 name: Compiler l'APK
 
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -20,7 +25,16 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk car-launcher.apk
       - uses: actions/upload-artifact@v4
         with:
           name: car-launcher-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: car-launcher.apk
+      - name: Publier dans « Dernière version »
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(grep -o "versionName '[^']*'" app/build.gradle | cut -d"'" -f2)
+          NOTES="Version $VER, compilée le $(date -u +'%d/%m/%Y à %H:%M') UTC. Télécharge car-launcher.apk et installe-le par-dessus l'ancien."
+          gh release delete derniere-version --yes --cleanup-tag || true
+          gh release create derniere-version car-launcher.apk --title "Dernière version ($VER)" --notes "$NOTES" --target "$GITHUB_SHA" --latest
