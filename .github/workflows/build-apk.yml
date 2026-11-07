@@ -1,0 +1,26 @@
+# Compile l'APK gratuitement sur GitHub à chaque envoi (onglet « Actions » du dépôt).
+# L'APK de test (signé avec la clé de débogage) se télécharge dans l'onglet Actions > dernière exécution > « Artifacts ».
+name: Compiler l'APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Compiler
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: car-launcher-apk
+          path: app/build/outputs/apk/debug/*.apk
