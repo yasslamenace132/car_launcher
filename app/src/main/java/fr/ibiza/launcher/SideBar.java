@@ -110,6 +110,7 @@ public final class SideBar {
             o.put("screenW", dm.widthPixels); o.put("screenH", dm.heightPixels);
             o.put("mode", mode(c)); o.put("effective", effectiveMode(c));
             o.put("overlay", overlayAllowed(c)); o.put("enabled", enabled(c));
+            o.put("abi", Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "?");
             return o.toString();
         } catch (Exception e) { return "{}"; }
     }
@@ -134,7 +135,14 @@ public final class SideBar {
         Bundle opts = null;
         if (enabled(c) && "window".equals(effectiveMode(c)) && Build.VERSION.SDK_INT >= 24) {
             DisplayMetrics dm = c.getResources().getDisplayMetrics();
-            opts = ActivityOptions.makeBasic().setLaunchBounds(new Rect(widthPx(c), 0, dm.widthPixels, dm.heightPixels)).toBundle();
+            int left = widthPx(c);
+            // v2.6 : la navigation occupe la partie droite, le cadre Spotify du lanceur reste visible à gauche
+            SharedPreferences sp = prefs(c);
+            if (pkg.equals(sp.getString("navPkg", ""))) {
+                float f = sp.getFloat("navLeft", 0f);
+                if (f > 0.1f && f < 0.9f) left = Math.round(dm.widthPixels * f);
+            }
+            opts = ActivityOptions.makeBasic().setLaunchBounds(new Rect(left, 0, dm.widthPixels, dm.heightPixels)).toBundle();
         }
         active = pkg;
         try { c.startActivity(i, opts); }
@@ -164,6 +172,9 @@ public final class SideBar {
     /* ---------------- affichage ---------------- */
     /** le lanceur passe au second plan : on affiche la barre */
     static void onLauncherHidden(Context c) {
+        /* v3.0 : en mode fenêtres, le lanceur reste visible derrière les applis (sa barre et ses cadres) :
+           ni barre flottante ni mini-lecteur, ils feraient doublon */
+        if (Dash.recent() || "window".equals(effectiveMode(c))) { hide(); MiniPlayer.onLauncherShown(); return; }
         MiniPlayer.onLauncherHidden(c);               // v2.4 : rectangle musique en haut à droite
         if (!enabled(c) || !overlayAllowed(c)) { hide(); return; }
         show(c);

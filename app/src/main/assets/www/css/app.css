@@ -680,3 +680,23 @@ html:not(.light).wall-bright #wall::after { opacity: .45; }
 .bar-help code { display: block; margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: rgba(0, 0, 0, .35);
   font: 500 15px/1.35 ui-monospace, 'Roboto Mono', monospace; color: var(--accent); word-break: break-all; }
 .light .bar-help code { background: rgba(0, 0, 0, .06); }
+
+/* ==================== v3.0 : tableau de bord (Waze + Spotify en fenêtres) ==================== */
+.dash { display: none; height: 100%; grid-template-columns: 1.6fr 1fr; column-gap: var(--gap); grid-column-gap: var(--gap); }
+.dashon #page-home .dash { display: grid; }
+.dashon #page-home .home-grid { display: none; }
+.dash-side { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
+#dash-music { flex: 1.35; }
+.dinfo { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 0; }
+.dframe { position: relative; min-height: 0; }
+.dframe-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px; text-align: center; }
+.dframe-in b { font-size: 22px; font-weight: 600; }
+.dframe-in span { font-size: 15px; line-height: 20px; color: var(--label2); max-width: 420px; }
+.dinfo-row { display: flex; align-items: flex-end; justify-content: space-between; }
+.dinfo-speed b { font-size: 64px; line-height: 62px; font-weight: 300; font-feature-settings: 'tnum'; }
+.dinfo-speed span { margin-left: 6px; font-size: 18px; color: var(--label2); }
+.dinfo-trip { text-align: right; }
+.dinfo-trip span { display: block; font-size: 14px; color: var(--label2); }
+.dinfo-trip b { font-size: 24px; font-weight: 500; font-feature-settings: 'tnum'; }
+.dinfo-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.dinfo-btns .chip-btn { flex: 1 1 45%; height: 46px; justify-content: center; font-size: 15px; white-space: nowrap; }

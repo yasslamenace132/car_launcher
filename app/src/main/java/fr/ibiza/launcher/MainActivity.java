@@ -180,6 +180,7 @@ public class MainActivity extends Activity implements Hub.Listener {
         });
         setContentView(web);
         web.loadUrl(START);
+        spotifyAuth(getIntent());                                     // v2.6
 
         IntentFilter f = new IntentFilter();
         f.addAction(Intent.ACTION_PACKAGE_ADDED); f.addAction(Intent.ACTION_PACKAGE_REMOVED); f.addAction(Intent.ACTION_PACKAGE_CHANGED);
@@ -277,6 +278,50 @@ public class MainActivity extends Activity implements Hub.Listener {
         @JavascriptInterface public void installUpdate(String repo) { Updater.install(MainActivity.this, repo); }
         @JavascriptInterface public int appVersion() { return Updater.localCode(MainActivity.this); }
         /* v2.4 : Waze ouvert d'office une seule fois après le démarrage du poste ; fiche Play Store */
+        /* v2.6 : Spotify, volume, réveil d'applis en arrière-plan, processeur */
+        @JavascriptInterface public String pendingAuth() { String p = pendingAuth; pendingAuth = null; return p == null ? "" : p; }
+        @JavascriptInterface public void openUrl(final String url) {
+            handler.post(new Runnable() { public void run() {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+                catch (Exception e) { Hub.log("openUrl KO " + e); }
+            } });
+        }
+        @JavascriptInterface public int volume(String dir) {
+            android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
+            int d = "up".equals(dir) ? android.media.AudioManager.ADJUST_RAISE : "down".equals(dir) ? android.media.AudioManager.ADJUST_LOWER : android.media.AudioManager.ADJUST_SAME;
+            try { am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, d, 0); } catch (Exception e) { Hub.log("volume KO " + e); }
+            int max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+            return max > 0 ? Math.round(100f * am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC) / max) : 0;
+        }
+        /** ouvre une appli le temps qu'elle s'active (Spotify, BT Music) puis revient sur le lanceur */
+        @JavascriptInterface public void wakeApp(final String pkg, final int ms) {
+            handler.post(new Runnable() { public void run() {
+                Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
+                if (i == null) { Hub.log("wakeApp : introuvable " + pkg); return; }
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                try { startActivity(i); } catch (Exception e) { Hub.log("wakeApp KO " + e); return; }
+                handler.postDelayed(new Runnable() { public void run() {
+                    Intent back = new Intent(MainActivity.this, MainActivity.class);
+                    back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                    back.putExtra("ibz_return", true);
+                    try { startActivity(back); } catch (Exception ignored) {}
+                } }, Math.max(800, Math.min(ms, 8000)));
+            } });
+        }
+        @JavascriptInterface public String abi() { return Build.SUPPORTED_ABIS != null && Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : ""; }
+        @JavascriptInterface public void setNav(String pkg, float left) {
+            getSharedPreferences("ibz", MODE_PRIVATE).edit().putString("navPkg", pkg == null ? "" : pkg).putFloat("navLeft", left).apply();
+        }
+        /* v3.0 : tableau de bord (applis en fenêtres sur les cadres de l'accueil) */
+        @JavascriptInterface public void tile(final String json) {
+            handler.post(new Runnable() { public void run() { Dash.tile(MainActivity.this, web, json); } });
+        }
+        @JavascriptInterface public void front() {
+            handler.post(new Runnable() { public void run() { Dash.front(MainActivity.this); } });
+        }
+        @JavascriptInterface public void launchPlain(final String pkg, final String cls) {
+            handler.post(new Runnable() { public void run() { Dash.openPlain(MainActivity.this, pkg, cls); } });
+        }
         @JavascriptInterface public boolean firstStart() { boolean f = !startedOnce; startedOnce = true; return f; }
         @JavascriptInterface public boolean installed(String pkg) {
             try { getPackageManager().getPackageInfo(pkg, 0); return true; } catch (Exception e) { return false; }
@@ -469,7 +514,26 @@ public class MainActivity extends Activity implements Hub.Listener {
         DoorOverlay.update(Hub.vehicleJson);
         SideBar.onLauncherHidden(this);                // v2.1 : la barre reste visible par-dessus l'appli ouverte
     }
-    @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); if (!i.getBooleanExtra("ibz_return", false)) js("home", "{}"); }
+    @Override protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        if (spotifyAuth(i)) return;                                   // v2.6 : retour de la connexion Spotify
+        if (!i.getBooleanExtra("ibz_return", false)) js("home", "{}");
+    }
+    /* v2.6 : carlauncher://spotify-callback?code=…&state=… -> interface (gardé si la page n'est pas encore prête) */
+    static String pendingAuth = null;
+    boolean spotifyAuth(Intent i) {
+        if (i == null || i.getData() == null || !"carlauncher".equals(i.getData().getScheme())) return false;
+        Uri u = i.getData();
+        try {
+            JSONObject o = new JSONObject();
+            o.put("code", u.getQueryParameter("code") == null ? "" : u.getQueryParameter("code"));
+            o.put("state", u.getQueryParameter("state") == null ? "" : u.getQueryParameter("state"));
+            o.put("error", u.getQueryParameter("error") == null ? "" : u.getQueryParameter("error"));
+            pendingAuth = o.toString();
+            js("spotifyAuth", pendingAuth);
+        } catch (Exception e) { Hub.log("Spotify : retour KO " + e); }
+        return true;
+    }
     View contentView() { return web; }
     @Override public void onBackPressed() { js("home", "{}"); } // un lanceur ne se ferme pas
     @Override protected void onDestroy() {

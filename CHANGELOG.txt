@@ -218,3 +218,10 @@ Version 2.4
 
 Version 2.5
 - Google Maps / Deezer acceptés sans réclamer Waze / Spotify (Waze est souvent refusé par le Play Store sur ces postes).
+
+Version 3.0 (tableau de bord)
+- Accueil « tableau de bord » : les vraies applis de navigation (Waze, Maps) et de musique (Spotify) sont posées en
+  fenêtres sur les cadres de l'accueil (Dash.java). Barre, vitesse et trajet restent visibles autour.
+  Boutons Agrandir la carte / la musique / Replacer. Nécessite les fenêtres de forme libre (Options développeurs).
+- Au démarrage : l'appli « BT Music » du poste est réveillée pour que le son du téléphone sorte, puis le tableau de bord se met en place.
+- Réglages : Tableau de bord, Son Bluetooth au démarrage, Appli son Bluetooth du poste.

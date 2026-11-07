@@ -82,6 +82,16 @@
     tripState: function () { return mock || !N.tripState ? null : parse(N.tripState(), null); },
     tripReset: function () { if (!mock && N.tripReset) N.tripReset(); },
     /* v2.2 : mise à jour depuis GitHub */
+    /* v2.6 : Spotify, volume, applis réveillées en arrière-plan */
+    pendingAuth: function () { if (mock || !N.pendingAuth) return null; var p = N.pendingAuth(); return p ? parse(p, null) : null; },
+    openUrl: function (u) { if (mock) { window.open(u, '_blank'); return; } if (N.openUrl) N.openUrl(u); },
+    volume: function (dir) { if (mock) { API.toast('Volume ' + (dir === 'up' ? '+' : '−') + ' (démo)'); return 50; } return N.volume ? N.volume(dir || 'same') : 0; },
+    wakeApp: function (pkg, ms) { if (mock) return; if (N.wakeApp) N.wakeApp(pkg, ms || 2500); },
+    abi: function () { return mock ? 'navigateur' : (N.abi ? N.abi() : ''); },
+    setNav: function (pkg, left) { if (!mock && N.setNav) N.setNav(pkg || '', left || 0); },
+    tile: function (list) { if (!mock && N.tile) N.tile(JSON.stringify(list || [])); },
+    front: function () { if (!mock && N.front) N.front(); },
+    launchPlain: function (a) { if (mock) { API.toast('Ouverture : ' + (a.label || a.pkg)); return; } if (N.launchPlain) N.launchPlain(a.pkg, a.cls || ''); },
     firstStart: function () { return mock ? false : (N.firstStart ? N.firstStart() : false); },
     installed: function (pkg) { return mock ? true : (N.installed ? N.installed(pkg) : true); },
     openStore: function (pkg) { if (mock) { API.toast('Play Store : ' + pkg + ' (démo)'); return; } if (N.openStore) N.openStore(pkg); },
