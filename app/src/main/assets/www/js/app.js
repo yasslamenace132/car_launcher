@@ -181,8 +181,22 @@
     apps = VIRTUAL.concat(list);
     appByKey = {}; apps.forEach(function (a) { appByKey[key(a)] = a; });
   }
+  var barAsked = false;
   function openApp(a, originEl) {
     if (a.virtual) { showPage(a.virtual, originEl); return; }
+    /* v2.3 : sans l'autorisation « affichage par-dessus », la barre ne peut pas rester sur Waze / Spotify */
+    var info = store.get('bar', true) && !barAsked ? Bridge.barInfo() : null;
+    if (info && !info.demo && info.overlay === false) {
+      barAsked = true;
+      openSheet('<div class="t-headline">Garder la barre sur ' + esc(a.label || 'l\'appli') + ' ?</div>' +
+        '<div class="t-sub">Pour que la barre de gauche reste visible quand l\'appli est ouverte, Android doit autoriser Car Launcher à s\'afficher par-dessus les autres applis. ' +
+        'Dans l\'écran qui va s\'ouvrir, choisis Car Launcher et active l\'autorisation, puis reviens avec la touche Retour.</div>' +
+        '<div class="sheet-actions"><button class="sbtn press" data-a="no">Ouvrir sans la barre</button><button class="sbtn primary press" data-a="ok">Autoriser</button></div>', function (s) {
+        $('[data-a="no"]', s).onclick = function () { closeSheet(); Bridge.launch(a); };
+        $('[data-a="ok"]', s).onclick = function () { closeSheet(); act('sys:overlay'); };
+      });
+      return;
+    }
     Bridge.launch(a);
   }
   function defaultDock() {
@@ -190,6 +204,7 @@
     want.forEach(function (th) {
       var f = null;
       var ra = roleApp(th); if (ra && out.indexOf(key(ra)) < 0) f = ra;
+      if (!f) { var best = findTheme(th); if (best && out.indexOf(key(best)) < 0) f = best; }
       if (!f) for (var i = 0; i < apps.length; i++) if (apps[i].theme === th && !apps[i].virtual && out.indexOf(key(apps[i])) < 0) { f = apps[i]; break; }
       out.push(f ? key(f) : null);
     });
@@ -202,6 +217,13 @@
       var mus = findTheme('music');
       dock = dock.map(function (k) { var a = k && appByKey[k]; return a && a.theme === 'files' && mus ? key(mus) : k; });
       store.set('dock', dock); store.set('dockfix15', true);
+    }
+    if (!store.get('dockfix23', false)) { // v2.3 : « GPS Test » ou le lecteur du poste avaient été pris à la place de Waze / Spotify
+      dock = dock.map(function (k) {
+        var a = k && appByKey[k]; if (!a || (a.theme !== 'nav' && a.theme !== 'music')) return k;
+        var best = findTheme(a.theme); return best && !best.virtual ? key(best) : k;
+      });
+      store.set('dock', dock); store.set('dockfix23', true);
     }
     var el = $('#dock'); el.innerHTML = '';
     dock.forEach(function (k, i) {
@@ -613,10 +635,22 @@
   function mmss(t) { t = Math.max(0, Math.round(t || 0)); return Math.floor(t / 60) + ':' + pad(t % 60); }
   /* applis par défaut choisies à la main (Réglages > Applis par défaut) ; sinon reconnaissance par le nom */
   function roleApp(th) { var r = store.get('roles', {}) || {}; return r[th] && appByKey[r[th]] ? appByKey[r[th]] : null; }
+  /* v2.3 : sans choix manuel, on préfère les applis les plus probables (Waze avant « GPS Test », Spotify avant le lecteur du poste) */
+  var PREFER = {
+    nav: ['com.waze', 'com.google.android.apps.maps', 'com.sygic', 'net.osmand', 'com.here', 'com.generalmagic', 'com.nng'],
+    music: ['com.spotify.music', 'deezer.android', 'com.deezer', 'com.google.android.apps.youtube.music', 'com.amazon.mp3', 'com.apple.android.music', 'com.soundcloud', 'com.maxmpz.audioplayer'],
+    phone: ['com.google.android.dialer']
+  };
+  var AVOID = { nav: /gps ?test|gps ?status|test|info|compass|boussole/i, music: /^$/ };
   function findTheme(th) {
     var ra = roleApp(th); if (ra) return ra;
-    for (var i = 0; i < apps.length; i++) if (apps[i].theme === th && !apps[i].virtual) return apps[i];
-    return null;
+    var cand = apps.filter(function (a) { return a.theme === th && !a.virtual; });
+    if (!cand.length) return null;
+    var pref = PREFER[th] || [];
+    for (var p = 0; p < pref.length; p++) for (var i = 0; i < cand.length; i++) if (String(cand[i].pkg).indexOf(pref[p]) === 0) return cand[i];
+    var avoid = AVOID[th];
+    if (avoid) { var good = cand.filter(function (a) { return !avoid.test(a.label || ''); }); if (good.length) return good[0]; }
+    return cand[0];
   }
   function appByPkg(pkg) { for (var i = 0; i < apps.length; i++) if (apps[i].pkg === pkg) return apps[i]; return null; }
 

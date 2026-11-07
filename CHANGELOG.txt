@@ -205,3 +205,8 @@ Version 2.2 (mises à jour depuis le lanceur)
   (Android demande une confirmation). Vérification automatique au démarrage, au plus toutes les 6 h.
 - Signature fixe (signing/debug.keystore) : chaque nouvelle version s'installe par-dessus l'ancienne.
 - La compilation GitHub publie car-launcher.apk et version.json dans la page « Dernière version ».
+
+Version 2.3
+- Navigation et Musique : sans choix manuel, préférence pour Waze / Google Maps et Spotify / Deezer, au lieu de la
+  première appli trouvée (« GPS Test », lecteur du poste). Le dock déjà enregistré est corrigé une fois.
+- Si l'autorisation « affichage par-dessus » manque, ouvrir une appli propose de l'activer pour garder la barre.
