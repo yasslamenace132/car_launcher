@@ -215,3 +215,6 @@ Version 2.4
 - Rectangle musique en haut à droite, par-dessus Waze (MiniPlayer.java) : titre, lecture/pause, suivant.
 - Waze s'ouvre d'office à côté de la barre au démarrage du poste (Réglages > Ouvrir Waze au démarrage).
 - Waze ou Spotify absents : proposition de les installer depuis le Play Store au lieu d'ouvrir une autre appli.
+
+Version 2.5
+- Google Maps / Deezer acceptés sans réclamer Waze / Spotify (Waze est souvent refusé par le Play Store sur ces postes).
